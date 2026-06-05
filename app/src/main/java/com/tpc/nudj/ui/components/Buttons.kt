@@ -42,6 +42,7 @@ fun PrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
+        modifier= Modifier,
         shape = RoundedCornerShape(50),
         colors = ButtonDefaults.buttonColors(
             containerColor = buttonColor,
@@ -73,8 +74,8 @@ fun SecondaryButton(
 ) {
     val isSystemDark = isSystemInDarkTheme()
     val useDarkTheme = isDarkModeEnabled && isSystemDark
-    val buttonColor =
-        if (useDarkTheme) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+    val buttonColor = if (useDarkTheme) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+    val borderColor = if (enabled) buttonColor else buttonColor.copy(alpha = 0.6f)
     val disabledTextColor = buttonColor.copy(alpha = 0.6f)
 
 
@@ -85,7 +86,7 @@ fun SecondaryButton(
         shape = RoundedCornerShape(50),
         border = BorderStroke(
             1.dp,
-            buttonColor
+            borderColor
         ),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = buttonColor,
@@ -187,7 +188,7 @@ fun SecondaryButtonDarkPreview() {
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun TertiaryButtonLightPreview() {
     NudjTheme {
