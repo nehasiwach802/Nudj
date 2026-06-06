@@ -27,26 +27,22 @@ fun PrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    isDarkModeEnabled: Boolean
+    enabled: Boolean = true
 ) {
     val isSystemDark = isSystemInDarkTheme()
-    val useDarkTheme = isDarkModeEnabled && isSystemDark
-    val buttonColor =
-        if (useDarkTheme) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-    val TextColor =
-        if (useDarkTheme) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary
+    val buttonColor = if (isSystemDark) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+    val textColor = if (isSystemDark) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onPrimary
     val disabledBackgroundColor = buttonColor.copy(alpha = 0.6f)
-    val disabledTextColor = TextColor.copy(alpha = 0.6f)
+    val disabledTextColor = textColor.copy(alpha = 0.6f)
 
     Button(
         onClick = onClick,
+        modifier = modifier,
         enabled = enabled,
-        modifier= Modifier,
         shape = RoundedCornerShape(50),
         colors = ButtonDefaults.buttonColors(
             containerColor = buttonColor,
-            contentColor = TextColor,
+            contentColor = textColor,
             disabledContainerColor = disabledBackgroundColor,
             disabledContentColor = disabledTextColor
         ),
@@ -70,12 +66,11 @@ fun SecondaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    isDarkModeEnabled: Boolean
+
 ) {
     val isSystemDark = isSystemInDarkTheme()
-    val useDarkTheme = isDarkModeEnabled && isSystemDark
-    val buttonColor = if (useDarkTheme) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-    val borderColor = if (enabled) buttonColor else buttonColor.copy(alpha = 0.6f)
+    val buttonColor =
+        if (isSystemDark) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
     val disabledTextColor = buttonColor.copy(alpha = 0.6f)
 
 
@@ -86,7 +81,7 @@ fun SecondaryButton(
         shape = RoundedCornerShape(50),
         border = BorderStroke(
             1.dp,
-            borderColor
+            buttonColor
         ),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = buttonColor,
@@ -108,14 +103,10 @@ fun TertiaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    isDarkModeEnabled: Boolean
+    enabled: Boolean = true
 ) {
     val isSystemDark = isSystemInDarkTheme()
-    val useDarkTheme = isDarkModeEnabled && isSystemDark
-
-    val textColor =
-        if (useDarkTheme) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
+    val textColor = if (isSystemDark) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
     val disabledTextColor = textColor.copy(alpha = 0.6f)
     TextButton(
         onClick = onClick,
@@ -139,79 +130,36 @@ fun TertiaryButton(
 }
 
 @Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun PreviewLightButton() {
+fun PrimaryButtonPreview() {
     NudjTheme {
         PrimaryButton(
             text = "Save",
-            onClick = {},
-            isDarkModeEnabled = false
-        )
-    }
-}
-
-@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
-@Composable
-fun PreviewDarkButton() {
-    NudjTheme {
-        PrimaryButton(
-            text = "Save",
-            onClick = {},
-            isDarkModeEnabled = true
+            onClick = {}
         )
     }
 }
 
 @Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun SecondaryButtonLightPreview() {
+fun SecondaryButtonPreview() {
     NudjTheme {
         SecondaryButton(
             text = "Edit",
-            onClick = {},
-            enabled = true,
-            isDarkModeEnabled = false
+            onClick = {}
         )
     }
 }
-
-@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
-@Composable
-fun SecondaryButtonDarkPreview() {
-    NudjTheme {
-        SecondaryButton(
-            text = "Edit",
-            onClick = {},
-            enabled = true,
-            isDarkModeEnabled = true
-        )
-    }
-}
-
 @Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun TertiaryButtonLightPreview() {
-    NudjTheme {
-        Surface {
-            TertiaryButton(
-                text = "Resend Email",
-                onClick = {},
-                enabled = true,
-                isDarkModeEnabled = false
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, uiMode = UI_MODE_NIGHT_YES)
-@Composable
-fun TertiaryButtonDarkPreview() {
+fun TertiaryButtonPreview() {
     NudjTheme {
         TertiaryButton(
             text = "Resend Email",
-            onClick = {},
-            enabled = true,
-            isDarkModeEnabled = true
+            onClick = {}
         )
     }
 }
