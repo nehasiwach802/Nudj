@@ -34,7 +34,13 @@ class LoginViewModel @Inject constructor() : ViewModel() {
             )
         }
     }
-    fun onLoginClick() {}
+    fun onLoginClick() {
+        //        viewModelScope.launch {
+//            _loginUiState.update { it.copy(isLoading = true) }
+//            delay(2000)
+//            _loginUiState.update { it.copy(isLoading = false) }
+//        }
+    }
 
     fun onForgotPasswordClick() {}
 

@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tpc.nudj.ui.components.EmailTextField
+import com.tpc.nudj.ui.components.LoadingIndicator
 import com.tpc.nudj.ui.components.NudjTopAppBar
 import com.tpc.nudj.ui.components.PrimaryButton
 import com.tpc.nudj.ui.screen.auth.login.LoginScreenLayout
@@ -39,13 +40,16 @@ fun ForgetPasswordScreen(
         }
     ) { paddingValues ->
         val uiState by viewModel.forgotPasswordUiState.collectAsState()
-        ForgetPasswordScreenLayout(
-            modifier = Modifier.padding(paddingValues),
-            uiState = uiState,
-            onEmailInput = viewModel::onEmailChange,
-            onSendEmailClick = viewModel ::onSendEmailClick
+        LoadingIndicator(isLoading = uiState.isLoading) {
 
-        )
+            ForgetPasswordScreenLayout(
+                modifier = Modifier.padding(paddingValues),
+                uiState = uiState,
+                onEmailInput = viewModel::onEmailChange,
+                onSendEmailClick = viewModel::onSendEmailClick
+
+            )
+        }
     }
 }
 
