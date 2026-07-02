@@ -22,6 +22,7 @@ class EmailVerifiedViewModel @Inject constructor(
         if(hasStarted){
             return
         }
+        hasStarted = true
         viewModelScope.launch{
             delay(1000)
             try{
@@ -36,7 +37,7 @@ class EmailVerifiedViewModel @Inject constructor(
                     onClubUser = {
                         viewModelScope.launch {
                             _events.emit(
-                                EmailVerifiedEvent.NavigateToClubVerification
+                                EmailVerifiedEvent.NavigateToClubVerificationScreen
                             )
                         }
                     },

@@ -108,7 +108,7 @@ fun     RegisterScreenLayout(
     val dividerAndTextColor = LocalAppColors.current.onBackground
     val currentRole = uiState.role
 
-        Column(
+    Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp),

@@ -71,7 +71,8 @@ fun EmailVerificationScreen(
                 uiState = uiState,
                 onBackClick = onNavigateBack,
                 onResendEmailClick = { viewModel.onResendEmailClick() },
-                modifier = Modifier.padding(paddingValues)
+                modifier = Modifier.padding(paddingValues),
+                onShowSnackBar = { message-> snackBarHostState.showSnackbar(message) }
             )
         }
     }
@@ -82,6 +83,7 @@ fun EmailVerificationScreenLayout(
     uiState: EmailVerificationUiState,
     onBackClick: () -> Unit,
     onResendEmailClick: () -> Unit,
+    onShowSnackBar: suspend (String) -> Unit,
     modifier: Modifier
 ) {
 
@@ -127,7 +129,7 @@ fun EmailVerificationScreenLayout(
                         context.startActivity(chooser)
                     } catch (e: Exception){
                         scope.launch {
-                            snackBarHostState.showSnackbar("No Email app found")
+                            onShowSnackBar("No email app found")
                         }
                     }
                 },
@@ -169,7 +171,8 @@ fun PreviewEmailVerificationScreen() {
             uiState = EmailVerificationUiState(),
             onBackClick = {},
             onResendEmailClick = {},
-            modifier = Modifier
+            modifier = Modifier,
+            onShowSnackBar = {}
         )
     }
 }

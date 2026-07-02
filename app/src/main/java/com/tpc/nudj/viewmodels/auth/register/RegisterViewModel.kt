@@ -11,8 +11,9 @@ import com.tpc.nudj.repository.auth.FirebaseAuthRepository
 import com.tpc.nudj.repository.user.UserRepository
 import com.tpc.nudj.ui.screen.auth.register.RegisterEvent
 import com.tpc.nudj.ui.screen.auth.register.RegisterUiState
+import com.tpc.nudj.utils.Validator.isValidEmail
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
+import com.tpc.nudj.utils.Validator
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +55,18 @@ class RegisterViewModel @Inject constructor(
     fun onRegisterClick() {
 
         viewModelScope.launch {
+            var isEmailValid = false
+            var emailErrorMessage = ""
+            isValidEmail(email =registerUiState.value.email,
+                onSuccess = {
+                    isEmailValid = true
+                },
+                onFailure = { errorMessage ->
+                    isEmailValid = false
+                    emailErrorMessage = errorMessage
+                }
+            )
+
             if(registerUiState.value.email.isBlank()){
                 _events.emit(RegisterEvent.ShowSnackBar("Please Enter Email"))
                 return@launch
@@ -76,8 +89,8 @@ class RegisterViewModel @Inject constructor(
                 _events.emit(RegisterEvent.ShowSnackBar("Passwords do not match"))
                 return@launch
             }
-            if (!isValidEmail(registerUiState.value.email)) {
-                _events.emit(RegisterEvent.ShowSnackBar("Please enter a valid email"))
+            if (!isEmailValid) {
+                _events.emit(RegisterEvent.ShowSnackBar(emailErrorMessage))
                 return@launch
             }
 
@@ -87,7 +100,8 @@ class RegisterViewModel @Inject constructor(
              firebaseRepository.createUserWithEmailAndPassword(
                     email = registerUiState.value.email,
                     password = registerUiState.value.password,
-                    displayName = registerUiState.value.email.substringBefore("@")
+                    displayName = registerUiState.value.email.substringBefore("@"),
+                    role = registerUiState.value.role
                 ).collect{result ->
                     when(result){
                         is AuthResult.Loading->{
@@ -109,9 +123,6 @@ class RegisterViewModel @Inject constructor(
                             val isProfileCreated = userRepository.createUserProfile(
                                 uid = currentUser.uid,
                                 email = currentUser.email,
-                                displayName = currentUser.displayName.ifBlank {
-                                    registerUiState.value.email.substringBefore("@")
-                                },
                                 role = registerUiState.value.role
                             )
                             _registerUiState.update{

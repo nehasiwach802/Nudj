@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tpc.nudj.model.AuthResult
+import com.tpc.nudj.repository.auth.AuthRepository
 import com.tpc.nudj.ui.screen.auth.emailVerification.EmailVerificationEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +20,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class EmailVerificationViewModel @Inject constructor() : ViewModel() {
+class EmailVerificationViewModel @Inject constructor(
+    private val authRepository: AuthRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EmailVerificationUiState())
     val uiState: StateFlow<EmailVerificationUiState> = _uiState.asStateFlow()
@@ -28,33 +31,38 @@ class EmailVerificationViewModel @Inject constructor() : ViewModel() {
             if (!uiState.value.isResendEnabled) {
                 return@launch
             }
-            when (result){
-                is AuthResult.Loading -> {
-                    _uiState.update {
-                        it.copy(isLoading = true)
-                    }
-                }
-                is AuthResult.VerificationNeeded -> {
-                    _uiState.update {
-                        it.copy(isLoading = false)
+            authRepository.sendEmailVerification().collect { result ->
+                when (result) {
+                    is AuthResult.Loading -> {
+                        _uiState.update {
+                            it.copy(isLoading = true)
+                        }
                     }
 
-                    _events.emit(
-                        EmailVerificationEvent.showSnackBar("Verification email sent again")
-                    )
+                    is AuthResult.VerificationNeeded -> {
+                        _uiState.update {
+                            it.copy(isLoading = false)
+                        }
 
-                    startTimer()
-                }
-                is AuthResult.Error -> {
-                    _uiState.update {
-                        it.copy(isLoading = false)
+                        _events.emit(
+                            EmailVerificationEvent.showSnackBar("Verification email sent again")
+                        )
+
+                        startTimer()
                     }
 
-                    _events.emit(
-                        EmailVerificationEvent.showSnackBar(result.message)
-                    )
+                    is AuthResult.Error -> {
+                        _uiState.update {
+                            it.copy(isLoading = false)
+                        }
+
+                        _events.emit(
+                            EmailVerificationEvent.showSnackBar(result.message)
+                        )
+                    }
+
+                    else -> Unit
                 }
-                else->Unit
             }
         }
 
@@ -89,5 +97,29 @@ class EmailVerificationViewModel @Inject constructor() : ViewModel() {
 
         hasStartedTimer = true
         startTimer()
+        startCheckingEmailVerification()
+    }
+    private fun startCheckingEmailVerification() {
+        viewModelScope.launch {
+            while (true) {
+                try {
+                    val isVerified = authRepository.reloadAndCheckEmailVerified()
+
+                    if (isVerified) {
+                        _events.emit(
+                            EmailVerificationEvent.NavigateToEmailVerified
+                        )
+                        break
+                    }
+
+                } catch (e: Exception) {
+                    _events.emit(
+                        EmailVerificationEvent.showSnackBar(
+                            e.message ?: "Unable to check email verification"
+                        )
+                    )
+                }
+            }
+        }
     }
 }

@@ -34,10 +34,5 @@ interface UserRepository {
     suspend fun userExists(userId: String): Boolean
 
     suspend fun clubExists(clubId: String): Boolean
-    suspend fun createUserProfile(
-        uid: String,
-        email: String,
-        displayName: String,
-        role: Role
-    ): Boolean
+
 }

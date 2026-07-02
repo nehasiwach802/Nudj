@@ -195,30 +195,5 @@ class UserRepositoryImpl @Inject constructor() : UserRepository {
         }
     }
 
-    override suspend fun createUserProfile(
-        uid: String,
-        email: String,
-        displayName: String,
-        role: Role
-    ): Boolean {
-        return when (role){
-            Role.USER -> {
-                val normalUser = NormalUser(
-                    userid = uid,
-                    firstName = displayName,
-                    lastname = "",
-                    email = email
-                )
-                saveUser(normalUser)
-            }
-                Role.ADMIN ->{
-                    val clubUser = ClubUser(
-                        clubId = uid,
-                        clubName = displayName,
-                        clubEmail = email
-                    )
-                    saveClub(clubUser)
-                }
-        }
-    }
+
 }

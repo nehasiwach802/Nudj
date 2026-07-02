@@ -7,30 +7,44 @@ import kotlinx.serialization.Serializable
 sealed interface ScreenRoute : NavKey {
 
     @Serializable
-    sealed interface Auth : ScreenRoute{
+    sealed interface Auth : ScreenRoute {
+        @Serializable
+        data object SplashScreen : Auth
 
         @Serializable
-        data object SplashScreen : App
+        data object Landing : Auth
+
         @Serializable
-        data object Landing: App
+        data object Login : Auth
+
         @Serializable
-        data object Login: Auth
+        data object Register : Auth
+
         @Serializable
-        data object Register: Auth
+        data object EmailVerification : Auth
+
         @Serializable
-        data object EmailVerification: Auth
+        data object EmailVerified : Auth
+
         @Serializable
-        data object EmailVerified: Auth
+        data object ForgotPassword : Auth
+
         @Serializable
-        data object ForgotPassword: Auth
-        @Serializable
-        data object ResetPassword: Auth
+        data object ResetPassword : Auth
     }
 
     @Serializable
     sealed interface App : ScreenRoute {
         @Serializable
-        data object UserDetailFetchScreen: App
-    }
+        data object StudentDashboard : App
 
+        @Serializable
+        data object ClubDashboard : App
+
+        @Serializable
+        data object ClubVerificationScreen : App
+
+        @Serializable
+        data object UserDetailsInput : App
+    }
 }

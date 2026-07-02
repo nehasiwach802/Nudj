@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
-
+import com.tpc.nudj.ui.screen.auth.reset.ResetPasswordUiState
 @HiltViewModel
 class ResetPasswordViewModel @Inject constructor() : ViewModel() {
 
