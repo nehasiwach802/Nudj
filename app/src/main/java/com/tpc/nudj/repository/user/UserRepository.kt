@@ -2,6 +2,7 @@ package com.tpc.nudj.repository.user
 
 import com.tpc.nudj.model.ClubUser
 import com.tpc.nudj.model.NormalUser
+import com.tpc.nudj.model.enums.Role
 
 interface UserRepository {
     suspend fun checkUserTypeAndNavigate(
@@ -27,4 +28,10 @@ interface UserRepository {
     suspend fun userExists(userId: String): Boolean
 
     suspend fun clubExists(clubId: String): Boolean
+    suspend fun createUserProfile(
+        uid: String,
+        email: String,
+        displayName: String,
+        role: Role
+    ): Boolean
 }

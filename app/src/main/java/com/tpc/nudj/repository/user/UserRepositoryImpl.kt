@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.tpc.nudj.model.ClubUser
 import com.tpc.nudj.model.NormalUser
+import com.tpc.nudj.model.enums.Role
 import com.tpc.nudj.utils.FirestoreCollections
 import com.tpc.nudj.utils.FirestoreUtils
 import kotlinx.coroutines.tasks.await
@@ -134,6 +135,33 @@ class UserRepositoryImpl @Inject constructor() : UserRepository {
             document.exists()
         } catch (e: Exception) {
             false
+        }
+    }
+
+    override suspend fun createUserProfile(
+        uid: String,
+        email: String,
+        displayName: String,
+        role: Role
+    ): Boolean {
+        return when (role){
+            Role.USER -> {
+                val normalUser = NormalUser(
+                    userid = uid,
+                    firstName = displayName,
+                    lastname = "",
+                    email = email
+                )
+                saveUser(normalUser)
+            }
+                Role.ADMIN ->{
+                    val clubUser = ClubUser(
+                        clubId = uid,
+                        clubName = displayName,
+                        clubEmail = email
+                    )
+                    saveClub(clubUser)
+                }
         }
     }
 }

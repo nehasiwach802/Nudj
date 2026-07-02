@@ -32,5 +32,10 @@ sealed interface ScreenRoute : NavKey {
         @Serializable
         data object UserDetailFetchScreen: App
     }
+    @Serializable
+    data object UserDetailFetchScreen : App
+
+    @Serializable
+    data object ClubVerificationScreen : App
 
 }

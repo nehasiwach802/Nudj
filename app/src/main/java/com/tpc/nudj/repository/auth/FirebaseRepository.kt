@@ -166,4 +166,10 @@ class FirebaseAuthRepository(
     override suspend fun signOut() {
         firebaseAuth.signOut()
     }
+
+    override suspend fun reloadAndCheckEmailVerified(): Boolean {
+        val firebaseUser = firebaseAuth.currentUser?: throw Exception("No user is signed in")
+        firebaseUser.reload().await()
+        return firebaseAuth.currentUser?.isEmailVerified == true
+    }
 }

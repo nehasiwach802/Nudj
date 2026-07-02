@@ -4,7 +4,9 @@ data class EmailVerificationUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val timerInSeconds: Int = 30,
-    val isResendEnabled: Boolean = true
+    val isResendEnabled: Boolean = true,
+    val countdown: Int = 60,
+    val canResendEmail: Boolean = false
 ) {
     val formattedTime: String
         get() {

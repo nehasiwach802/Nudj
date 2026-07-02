@@ -42,7 +42,6 @@ fun ResetPasswordScreen(
     Scaffold(
         containerColor = LocalAppColors.current.background
     ) { paddingValues ->
-
         val uiState by viewModel.resetPasswordUiState.collectAsState()
         LoadingIndicator(isLoading = uiState.isLoading) {
             ResetPasswordScreenLayout(

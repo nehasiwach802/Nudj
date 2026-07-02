@@ -13,23 +13,37 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.tpc.nudj.R
 import com.tpc.nudj.ui.components.PrimaryButton
 import com.tpc.nudj.ui.theme.LocalAppColors
 import com.tpc.nudj.ui.theme.NudjTheme
+import com.tpc.nudj.viewmodels.auth.emailVerification.EmailVerificationViewModel
 
 @Composable
 fun EmailVerifiedScreen(
+    viewModel: EmailVerificationViewModel = hiltViewModel(),
     onDashboardClick: () -> Unit = {}
 ) {
+    val snackbarHostState = remember {SnackbarHostState()}
+
+   LaunchedEffect(Unit) {
+       viewModel.onScreenOpened()
+   }
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState)
+        },
         containerColor = LocalAppColors.current.background
     ) { innerPadding ->
         Column(
