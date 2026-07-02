@@ -16,6 +16,43 @@ class UserRepositoryImpl @Inject constructor() : UserRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
+    override suspend fun createUserProfile(uid: String, email: String, role: Role): Boolean {
+        return try {
+            val userMap = hashMapOf(
+                "uid" to uid,
+                "email" to email,
+                "role" to role.name.lowercase(),
+                "createdAt" to System.currentTimeMillis()
+            )
+            firestore.collection(FirestoreCollections.USERS.path).document(uid).set(userMap).await()
+            if (role == Role.CLUB) {
+                val club = ClubUser(
+                    clubId = uid,
+                    clubEmail = email,
+                    role = Role.CLUB,
+                    verificationStatus = "pending"
+                )
+                val clubMap = FirestoreUtils.toMap(club)
+                firestore.collection(FirestoreCollections.CLUBS.path).document(uid).set(clubMap)
+                    .await()
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override suspend fun fetchUserRole(uid: String): Role {
+        return try {
+            val doc =
+                firestore.collection(FirestoreCollections.USERS.path).document(uid).get().await()
+            val roleString = doc.getString("role")?.uppercase() ?: "USER"
+            FirestoreUtils.enumValueOrDefault(roleString, Role.USER)
+        } catch (e: Exception) {
+            Role.USER
+        }
+    }
+
     override suspend fun checkUserTypeAndNavigate(
         onNormalUser: () -> Unit,
         onClubUser: () -> Unit,
@@ -28,19 +65,39 @@ class UserRepositoryImpl @Inject constructor() : UserRepository {
         }
 
         try {
-            if (userExists(currentUser.uid)) {
-                onNormalUser()
+            val doc = firestore
+                .collection(FirestoreCollections.USERS.path)
+                .document(currentUser.uid)
+                .get()
+                .await()
+
+            if (!doc.exists()) {
+                onUserNotFound()
                 return
             }
 
-            if (clubExists(currentUser.uid)) {
-                onClubUser()
-                return
-            }
+            val roleString = doc.getString("role")?.uppercase() ?: "USER"
+            val role = FirestoreUtils.enumValueOrDefault(roleString, Role.USER)
 
-            onUserNotFound()
+            when (role) {
+                Role.CLUB -> onClubUser()
+                Role.USER -> onNormalUser()
+            }
         } catch (e: Exception) {
             onUserNotFound()
+        }
+    }
+
+    override suspend fun fetchClubVerificationStatus(uid: String): String {
+        return try {
+            val doc = firestore
+                .collection(FirestoreCollections.CLUBS.path)
+                .document(uid)
+                .get()
+                .await()
+            doc.getString("verificationStatus") ?: "pending"
+        } catch (e: Exception) {
+            "pending"
         }
     }
 

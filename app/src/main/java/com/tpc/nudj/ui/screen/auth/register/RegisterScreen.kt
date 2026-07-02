@@ -134,8 +134,8 @@ fun     RegisterScreenLayout(
 
                 RoleSelectionButton(
                     text = "Admin",
-                    isSelected = currentRole == Role.ADMIN,
-                    onClick = { onRoleSelected(Role.ADMIN) },
+                    isSelected = currentRole == Role.CLUB,
+                    onClick = { onRoleSelected(Role.CLUB) },
                     modifier = Modifier.weight(1f)
                 )
             }

@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.tpc.nudj.model.User
+import com.tpc.nudj.model.enums.Role
 import com.tpc.nudj.repository.auth.AuthRepository
+import com.tpc.nudj.repository.user.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -12,11 +14,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @HiltViewModel
 class AppViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Initial)
@@ -30,22 +34,77 @@ class AppViewModel @Inject constructor(
         )
 
     init {
-        val user = FirebaseAuth.getInstance().currentUser
-        if (user != null) {
-            _authState.value = AuthState.Authenticated(User(user.uid, user.email ?: ""))
-        } else {
-            _authState.value = AuthState.Unauthenticated
+        viewModelScope.launch {
+            resolveInitialDestination()
+            observeAuthState()
         }
-        observeAuthState()
+    }
+
+    fun refreshAuthState() {
+        viewModelScope.launch {
+            resolveInitialDestination()
+        }
+    }
+
+    private suspend fun resolveInitialDestination() {
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+
+        if (firebaseUser == null) {
+            _authState.value = AuthState.Unauthenticated
+            return
+        }
+
+        try {
+            firebaseUser.reload().await()
+        } catch (_: Exception) { }
+
+        if (!firebaseUser.isEmailVerified) {
+            _authState.value = AuthState.EmailNotVerified
+            return
+        }
+
+        val role = userRepository.fetchUserRole(firebaseUser.uid)
+
+        when (role) {
+            Role.CLUB -> {
+                val status = userRepository.fetchClubVerificationStatus(firebaseUser.uid)
+                _authState.value = if (status == "approved") {
+                    AuthState.Authenticated(
+                        User(firebaseUser.uid, firebaseUser.email ?: ""),
+                        Destination.ClubDashboard
+                    )
+                } else {
+                    AuthState.Authenticated(
+                        User(firebaseUser.uid, firebaseUser.email ?: ""),
+                        Destination.ClubPending
+                    )
+                }
+            }
+            Role.USER -> {
+                val userDetails = userRepository.fetchUserById(firebaseUser.uid)
+
+                val isProfileIncomplete = userDetails == null || userDetails.name.isNullOrEmpty()
+
+                _authState.value = if (isProfileIncomplete) {
+                    AuthState.Authenticated(
+                        User(firebaseUser.uid, firebaseUser.email ?: ""),
+                        Destination.StudentDetailsInput
+                    )
+                } else {
+                    AuthState.Authenticated(
+                        User(firebaseUser.uid, firebaseUser.email ?: ""),
+                        Destination.StudentDashboard
+                    )
+                }
+            }
+        }
     }
 
     private fun observeAuthState() {
         viewModelScope.launch {
             authRepository.getCurrentUser().collect { user ->
-                _authState.value = if (user != null) {
-                    AuthState.Authenticated(user)
-                } else {
-                    AuthState.Unauthenticated
+                if (user == null) {
+                    _authState.value = AuthState.Unauthenticated
                 }
             }
         }
@@ -57,9 +116,20 @@ class AppViewModel @Inject constructor(
         }
     }
 
+    enum class Destination {
+        StudentDashboard,
+        StudentDetailsInput,
+        ClubDashboard,
+        ClubPending
+    }
+
     sealed class AuthState {
         data object Initial : AuthState()
-        data class Authenticated(val user: User) : AuthState()
         data object Unauthenticated : AuthState()
+        data object EmailNotVerified : AuthState()
+        data class Authenticated(
+            val user: User,
+            val destination: Destination
+        ) : AuthState()
     }
 }

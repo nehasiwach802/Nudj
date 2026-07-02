@@ -1,6 +1,7 @@
 package com.tpc.nudj.model
 
 import com.tpc.nudj.model.enums.ClubCategory
+import com.tpc.nudj.model.enums.Role
 
 data class ClubUser(
     val clubId: String = "",
@@ -10,5 +11,7 @@ data class ClubUser(
     val clubEmail: String = "",
     val clubLogo: String? = null,
     val clubCategory: ClubCategory = ClubCategory.MISCELLANEOUS,
-    val additionalDetails: String = ""
+    val additionalDetails: String = "",
+    val role: Role = Role.CLUB,
+    val verificationStatus: String = "pending"
 )

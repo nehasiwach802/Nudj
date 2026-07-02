@@ -18,7 +18,6 @@ import androidx.navigation3.ui.NavDisplay
 import com.tpc.nudj.ui.navigation.ScreenRoute
 import com.tpc.nudj.ui.screen.DemoScreen
 import com.tpc.nudj.ui.screen.auth.emailVerification.EmailVerificationScreen
-import com.tpc.nudj.ui.screen.auth.emailVerified.EmailVerifiedScreen
 import com.tpc.nudj.ui.screen.auth.forgotPassword.ForgetPasswordScreen
 import com.tpc.nudj.ui.screen.auth.landing.LandingScreen
 import com.tpc.nudj.ui.screen.auth.login.LoginScreen
@@ -28,7 +27,7 @@ import com.tpc.nudj.ui.screen.detailsFetch.UserDetailFetchScreen
 import com.tpc.nudj.ui.theme.NudjTheme
 import com.tpc.nudj.viewmodels.AppViewModel
 import dagger.hilt.android.AndroidEntryPoint
-
+import kotlinx.coroutines.delay
 
 @AndroidEntryPoint
 
@@ -93,37 +92,16 @@ class MainActivity : ComponentActivity() {
                             RegisterScreen(
                                 onNavigateToLogin = {
                                     backStack.add(ScreenRoute.Auth.Login)
-                                },
-                                onNavigateToEmailVerification = {
-                                    backStack.clear()
-                                    backStack.add(ScreenRoute.Auth.EmailVerification)
                                 }
                             )
                         }
                         entry<ScreenRoute.Auth.EmailVerification> {
                             EmailVerificationScreen(
-                                onNavigateBack = {
-                                    backStack.removeLastOrNull()
-                                },
-                                onNavigateToEmailVerified = {
-                                    backStack.clear()
-                                    backStack.add(ScreenRoute.Auth.EmailVerified)
-                                }
-                            )
-                        }
-                        entry<ScreenRoute.Auth.EmailVerified> {
-                            EmailVerifiedScreen(
-                                onNavigateToUserDetailsInput = {
-                                    backStack.clear()
-                                    backStack.add(ScreenRoute.App.UserDetailFetchScreen)
-                                }
-                                //navigation to club screen
+                                onNavigateBack = {}
                             )
                         }
                         entry<ScreenRoute.Auth.ForgotPassword> {
-                            ForgetPasswordScreen(
-                                onLoginClick = {}
-                            )
+                            ForgetPasswordScreen()
                         }
                         entry<ScreenRoute.App.UserDetailFetchScreen> {
                             UserDetailFetchScreen(

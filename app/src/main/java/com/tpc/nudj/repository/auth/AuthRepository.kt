@@ -2,6 +2,7 @@ package com.tpc.nudj.repository.auth
 
 import com.tpc.nudj.model.AuthResult
 import com.tpc.nudj.model.User
+import com.tpc.nudj.model.enums.Role
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -45,7 +46,8 @@ interface AuthRepository {
     suspend fun createUserWithEmailAndPassword(
         email: String,
         password: String,
-        displayName: String
+        displayName: String,
+        role: Role
     ): Flow<AuthResult>
 
     /**

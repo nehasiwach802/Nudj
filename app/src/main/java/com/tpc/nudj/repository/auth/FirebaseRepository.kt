@@ -5,29 +5,39 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.tpc.nudj.model.AuthResult
 import com.tpc.nudj.model.User
+import com.tpc.nudj.model.enums.Role
+import com.tpc.nudj.repository.user.UserRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class FirebaseAuthRepository(
-    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val userRepository: UserRepository
 ) : AuthRepository {
 
     override fun getCurrentUser(): Flow<User?> = callbackFlow {
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val firebaseUser = auth.currentUser
             if (firebaseUser != null) {
-                trySend(
-                    User(
-                        uid = firebaseUser.uid,
-                        email = firebaseUser.email ?: "",
-                        displayName = firebaseUser.displayName ?: "",
-                        isEmailVerified = firebaseUser.isEmailVerified,
-                        photoUrl = firebaseUser.photoUrl?.toString() ?: ""
+                CoroutineScope(Dispatchers.IO).launch {
+                    val role = userRepository.fetchUserRole(firebaseUser.uid)
+                    trySend(
+                        User(
+                            uid = firebaseUser.uid,
+                            email = firebaseUser.email ?: "",
+                            displayName = firebaseUser.displayName ?: "",
+                            isEmailVerified = firebaseUser.isEmailVerified,
+                            photoUrl = firebaseUser.photoUrl?.toString() ?: "",
+                            role = role
+                        )
                     )
-                )
+                }
             } else {
                 trySend(null)
             }
@@ -52,6 +62,7 @@ class FirebaseAuthRepository(
 
             if (firebaseUser != null) {
                 if (firebaseUser.isEmailVerified) {
+                    val role = userRepository.fetchUserRole(firebaseUser.uid)
                     emit(
                         AuthResult.Success(
                             User(
@@ -59,7 +70,8 @@ class FirebaseAuthRepository(
                                 email = firebaseUser.email ?: "",
                                 displayName = firebaseUser.displayName ?: "",
                                 isEmailVerified = firebaseUser.isEmailVerified,
-                                photoUrl = firebaseUser.photoUrl?.toString() ?: ""
+                                photoUrl = firebaseUser.photoUrl?.toString() ?: "",
+                                role = role
                             )
                         )
                     )
@@ -88,6 +100,7 @@ class FirebaseAuthRepository(
                     emit(AuthResult.Error("Use IIITDMJ email addresses only."))
                     return@flow
                 }
+                val role = userRepository.fetchUserRole(firebaseUser.uid)
                 emit(
                     AuthResult.Success(
                         User(
@@ -95,7 +108,8 @@ class FirebaseAuthRepository(
                             email = firebaseUser.email ?: "",
                             displayName = firebaseUser.displayName ?: "",
                             isEmailVerified = firebaseUser.isEmailVerified,
-                            photoUrl = firebaseUser.photoUrl?.toString() ?: ""
+                            photoUrl = firebaseUser.photoUrl?.toString() ?: "",
+                            role = role
                         )
                     )
                 )
@@ -110,7 +124,8 @@ class FirebaseAuthRepository(
     override suspend fun createUserWithEmailAndPassword(
         email: String,
         password: String,
-        displayName: String
+        displayName: String,
+        role: Role
     ): Flow<AuthResult> = flow {
         try {
             emit(AuthResult.Loading)

@@ -134,17 +134,17 @@ fun LoginScreenLayout(
 
             Spacer(modifier= Modifier.weight(0.1f))
 
-            if (uiState.role == Role.ADMIN) {
+            if (uiState.role == Role.CLUB) {
                 PrimaryButton(
                     text = "Admin",
-                    onClick = {onRoleSelected(Role.ADMIN)},
+                    onClick = {onRoleSelected(Role.CLUB)},
                     hasBorder = true,
                     modifier = Modifier.weight(1f)
                 )
             } else {
                 SecondaryButton(
                     text = "Admin",
-                    onClick = {onRoleSelected(Role.ADMIN)},
+                    onClick = {onRoleSelected(Role.CLUB)},
                     modifier = Modifier.weight(1f)
                 )
             }
