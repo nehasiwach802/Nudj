@@ -26,7 +26,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val firebaseRepository: FirebaseAuthRepository,
+    private val firebaseRepository: AuthRepository,
     private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
 ) : ViewModel() {

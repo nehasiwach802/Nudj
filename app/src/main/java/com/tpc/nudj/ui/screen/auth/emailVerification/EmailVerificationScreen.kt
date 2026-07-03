@@ -89,7 +89,6 @@ fun EmailVerificationScreenLayout(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val snackBarHostState = remember { SnackbarHostState() }
 
         Column(
             modifier = Modifier

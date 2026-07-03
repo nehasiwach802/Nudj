@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
                         entry<ScreenRoute.Auth.Landing>{
                             LandingScreen(
                                 onLandingScreenClick = {
-                                    backStack.add(ScreenRoute.Auth.Login)
+                                    backStack.add(ScreenRoute.Auth.Register)
                                 }
                             )
                         }
