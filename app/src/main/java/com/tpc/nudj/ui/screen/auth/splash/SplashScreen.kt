@@ -26,13 +26,7 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun SplashScreen(
-    onSplashCompleted: () -> Unit
-) {
-    LaunchedEffect(key1 = true) {
-        delay(2000L.milliseconds)
-        onSplashCompleted()
-    }
+fun SplashScreen() {
     Scaffold(
         modifier = Modifier
             .fillMaxSize(),
@@ -82,9 +76,7 @@ fun SplashScreenLayout() {
 @Composable
 private fun SplashScreenLayoutPreview() {
     NudjTheme {
-        SplashScreen(
-            onSplashCompleted = {}
-        )
+        SplashScreen()
     }
 }
 

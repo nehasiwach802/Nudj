@@ -34,10 +34,8 @@ class AppViewModel @Inject constructor(
         )
 
     init {
-        viewModelScope.launch {
-            resolveInitialDestination()
-            observeAuthState()
-        }
+        observeAuthState()
+        refreshAuthState()
     }
 
     fun refreshAuthState() {
@@ -82,7 +80,6 @@ class AppViewModel @Inject constructor(
             }
             Role.USER -> {
                 val userDetails = userRepository.fetchUserById(firebaseUser.uid)
-
                 val isProfileIncomplete = userDetails == null || userDetails.name.isNullOrEmpty()
 
                 _authState.value = if (isProfileIncomplete) {

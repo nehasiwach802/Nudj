@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
                         is AppViewModel.AuthState.Initial -> {}
                         is AppViewModel.AuthState.Unauthenticated -> {
                             backStack.clear()
-                            backStack.add(ScreenRoute.Auth.SplashScreen)
+                            backStack.add(ScreenRoute.Auth.Landing)
                         }
                         is AppViewModel.AuthState.EmailNotVerified -> {
                             backStack.clear()
@@ -78,11 +78,7 @@ class MainActivity : ComponentActivity() {
                     ),
                     entryProvider = entryProvider {
                         entry<ScreenRoute.Auth.SplashScreen> {
-                            SplashScreen(
-                                onSplashCompleted = {
-                                    backStack.add(ScreenRoute.Auth.Landing)
-                                }
-                            )
+                            SplashScreen()
                         }
                         entry<ScreenRoute.Auth.Landing>{
                             LandingScreen(
