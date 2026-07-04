@@ -57,7 +57,7 @@ class EmailVerificationViewModel @Inject constructor(
                         }
 
                         _events.emit(
-                            EmailVerificationEvent.showSnackBar(result.message)
+                            EmailVerificationEvent.showSnackBar("Some error occurred while verifying the email. Please try again later.")
                         )
                     }
 
@@ -103,6 +103,7 @@ class EmailVerificationViewModel @Inject constructor(
         viewModelScope.launch {
             while (true) {
                 try {
+                    delay(3000)
                     val isVerified = authRepository.reloadAndCheckEmailVerified()
 
                     if (isVerified) {
@@ -114,9 +115,7 @@ class EmailVerificationViewModel @Inject constructor(
 
                 } catch (e: Exception) {
                     _events.emit(
-                        EmailVerificationEvent.showSnackBar(
-                            e.message ?: "Unable to check email verification"
-                        )
+                        EmailVerificationEvent.showSnackBar("Unable to check email verification")
                     )
                 }
             }

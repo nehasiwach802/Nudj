@@ -45,7 +45,8 @@ import com.tpc.nudj.viewmodels.auth.register.RegisterViewModel
 fun RegisterScreen(
     viewmodel: RegisterViewModel = hiltViewModel(),
     onNavigateToLogin: () -> Unit,
-    onNavigateToEmailVerification: () -> Unit
+    onNavigateToEmailVerification: () -> Unit,
+    onNavigateToEmailVerified:()-> Unit
 ) {
     val uiState by viewmodel.registerUiState.collectAsStateWithLifecycle()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -58,6 +59,9 @@ fun RegisterScreen(
 
                 RegisterEvent.NavigateToEmailVerification -> {
                     onNavigateToEmailVerification()
+                }
+                RegisterEvent.NavigateToEmailVerified -> {
+                    onNavigateToEmailVerified()
                 }
             }
 

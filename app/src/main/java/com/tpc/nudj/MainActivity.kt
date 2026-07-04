@@ -102,6 +102,10 @@ class MainActivity : ComponentActivity() {
                                 onNavigateToEmailVerification = {
                                     backStack.clear()
                                     backStack.add(ScreenRoute.Auth.EmailVerification)
+                                },
+                                onNavigateToEmailVerified = {
+                                    backStack.clear()
+                                    backStack.add(ScreenRoute.Auth.EmailVerified)
                                 }
                             )
                         }

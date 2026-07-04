@@ -52,7 +52,7 @@ class EmailVerifiedViewModel @Inject constructor(
 
             }catch(e: Exception){
                 _events.emit(
-                    EmailVerifiedEvent.ShowSnackBar(e.message?: "Unable to fetch user role")
+                    EmailVerifiedEvent.ShowSnackBar("Unable to fetch user role")
                 )
             }
 

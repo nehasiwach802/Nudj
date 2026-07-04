@@ -3,15 +3,12 @@ package com.tpc.nudj.viewmodels.auth.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tpc.nudj.model.AuthResult
-import com.tpc.nudj.model.ClubUser
-import com.tpc.nudj.model.NormalUser
 import com.tpc.nudj.model.enums.Role
 import com.tpc.nudj.repository.auth.AuthRepository
-import com.tpc.nudj.repository.auth.FirebaseAuthRepository
+import com.tpc.nudj.repository.auth.GoogleSignInClient
 import com.tpc.nudj.repository.user.UserRepository
 import com.tpc.nudj.ui.screen.auth.register.RegisterEvent
 import com.tpc.nudj.ui.screen.auth.register.RegisterUiState
-import com.tpc.nudj.utils.Validator.isValidEmail
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.tpc.nudj.utils.Validator
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,9 +23,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val firebaseRepository: AuthRepository,
-    private val userRepository: UserRepository,
     private val authRepository: AuthRepository,
+    private val userRepository: UserRepository,
+    private val googleSignInClient: GoogleSignInClient
 ) : ViewModel() {
 
     private val _registerUiState = MutableStateFlow(RegisterUiState())
@@ -57,15 +54,13 @@ class RegisterViewModel @Inject constructor(
         viewModelScope.launch {
             var isEmailValid = false
             var emailErrorMessage = ""
-            isValidEmail(email =registerUiState.value.email,
-                onSuccess = {
-                    isEmailValid = true
-                },
-                onFailure = { errorMessage ->
-                    isEmailValid = false
-                    emailErrorMessage = errorMessage
-                }
-            )
+            val emailResult = Validator.isValidEmail(registerUiState.value.email.trim())
+            emailResult.onSuccess {
+                isEmailValid = true
+            }.onFailure { exception ->
+                isEmailValid = false
+                emailErrorMessage = exception.message ?: "Invalid Email"
+            }
 
             if(registerUiState.value.email.isBlank()){
                 _events.emit(RegisterEvent.ShowSnackBar("Please Enter Email"))
@@ -94,10 +89,8 @@ class RegisterViewModel @Inject constructor(
                 return@launch
             }
 
-            try{ _registerUiState.update {
-                    it.copy(isLoading = true)
-                }
-             firebaseRepository.createUserWithEmailAndPassword(
+            try{
+             authRepository.createUserWithEmailAndPassword(
                     email = registerUiState.value.email,
                     password = registerUiState.value.password,
                     displayName = registerUiState.value.email.substringBefore("@"),
@@ -125,9 +118,7 @@ class RegisterViewModel @Inject constructor(
                                 email = currentUser.email,
                                 role = registerUiState.value.role
                             )
-                            _registerUiState.update{
-                                it.copy(isLoading = false)
-                            }
+
                             if (isProfileCreated) {
                                 _events.emit(
                                     RegisterEvent.ShowSnackBar("Verification email sent")
@@ -162,20 +153,98 @@ class RegisterViewModel @Inject constructor(
 
 
             }catch (e: Exception){
-                _events.emit(
-                    RegisterEvent.ShowSnackBar(e.message ?: "Registration failed")
-                )
-
-            }finally {
                 _registerUiState.update {
                     it.copy(isLoading = false)
                 }
+
+                _events.emit(
+                    RegisterEvent.ShowSnackBar("Registration failed")
+                )
+
             }
         }
     }
 
 
-    fun onGoogleClick() {}
+    fun onGoogleClick() {
+        viewModelScope.launch {
+            val idToken = googleSignInClient.signIn()
+            if (idToken.isNullOrBlank()){
+                _events.emit(
+                    RegisterEvent.ShowSnackBar("Google sign-in failed")
+                )
+                return@launch
+            }
+            try {
+                authRepository.signInWithGoogle(idToken).collect { result ->
+                    when (result) {
+                        is AuthResult.Loading -> {
+                            _registerUiState.update {
+                                it.copy(isLoading = true)
+                            }
+                        }
+
+                        is AuthResult.Success -> {
+                            val currentUser = authRepository.getCurrentUser().firstOrNull()
+                            if (currentUser == null) {
+                                _registerUiState.update {
+                                    it.copy(isLoading = false)
+                                }
+                                _events.emit(
+                                    RegisterEvent.ShowSnackBar("User not found after Google sign-in")
+                                )
+                                return@collect
+                            }
+                            val isProfileCreated = userRepository.createUserProfile(
+                                uid = currentUser.uid,
+                                email = currentUser.email,
+                                role = registerUiState.value.role
+                            )
+                            if (isProfileCreated) {
+                                _events.emit(
+                                    RegisterEvent.ShowSnackBar("Google registration successful")
+                                )
+                                _events.emit(
+                                    RegisterEvent.NavigateToEmailVerified
+                                )
+                            } else {
+                                _registerUiState.update {
+                                    it.copy(isLoading = false)
+                                }
+                                _events.emit(
+                                    RegisterEvent.ShowSnackBar("Failed to create user profile")
+                                )
+
+                            }
+
+
+                        }
+
+                        is AuthResult.Error -> {
+                            _registerUiState.update {
+                                it.copy(isLoading = false)
+                            }
+                            _events.emit(
+                                RegisterEvent.ShowSnackBar(result.message)
+                            )
+                        }
+                        else -> Unit
+                    }
+                }
+            }catch (e: Exception){
+                _registerUiState.update {
+                it.copy(isLoading = false)
+            }
+                _events.emit(
+                    RegisterEvent.ShowSnackBar("Google registration failed")
+                )
+
+            }
+
+
+        }
+    }
+
 
     fun onPasswordVisibilityToggle(){
         _registerUiState.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
