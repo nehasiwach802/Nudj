@@ -25,7 +25,7 @@ class FirebaseAuthRepository(
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val firebaseUser = auth.currentUser
             if (firebaseUser != null) {
-                CoroutineScope(Dispatchers.IO).launch {
+                launch(Dispatchers.IO) {
                     val role = userRepository.fetchUserRole(firebaseUser.uid)
                     trySend(
                         User(
@@ -86,7 +86,7 @@ class FirebaseAuthRepository(
         }
     }
 
-    override suspend fun signInWithGoogle(idToken: String): Flow<AuthResult> = flow {
+    override suspend fun signInWithGoogle(idToken: String, role: Role): Flow<AuthResult> = flow {
         try {
             emit(AuthResult.Loading)
             val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -100,7 +100,6 @@ class FirebaseAuthRepository(
                     emit(AuthResult.Error("Use IIITDMJ email addresses only."))
                     return@flow
                 }
-                val role = userRepository.fetchUserRole(firebaseUser.uid)
                 emit(
                     AuthResult.Success(
                         User(
