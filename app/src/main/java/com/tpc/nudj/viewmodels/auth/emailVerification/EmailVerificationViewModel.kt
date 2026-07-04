@@ -79,9 +79,9 @@ class EmailVerificationViewModel @Inject constructor(
         timerJob = viewModelScope.launch {
 
             _uiState.update {
-                it.copy(isResendEnabled = false, timerInSeconds = 30)
+                it.copy(isResendEnabled = false, timerInSeconds = 60)
             }
-            for(i in 29 downTo 0){
+            for(i in 59 downTo 0){
                 delay(1000)
                 _uiState.update { it.copy(timerInSeconds = i) }
             }
