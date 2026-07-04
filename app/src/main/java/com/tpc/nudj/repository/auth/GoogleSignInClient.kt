@@ -9,9 +9,11 @@ import androidx.credentials.GetCredentialResponse
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.tpc.nudj.R
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
-class GoogleSignInClient(
-    private val context: Context
+class GoogleSignInClient @Inject constructor(
+    @ApplicationContext private val context: Context
 ) {
     private val credentialManager = CredentialManager.create(context)
 
