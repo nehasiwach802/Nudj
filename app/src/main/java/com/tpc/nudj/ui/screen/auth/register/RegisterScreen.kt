@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,6 +51,7 @@ fun RegisterScreen(
 ) {
     val uiState by viewmodel.registerUiState.collectAsStateWithLifecycle()
     val snackBarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         viewmodel.events.collect { it ->
             when (it) {
@@ -86,7 +88,7 @@ fun RegisterScreen(
                 onConfirmPasswordVisibilityToggle = { viewmodel.onConfirmPasswordVisibilityToggle() },
                 onRoleSelected = { role -> viewmodel.onRoleChange(role) },
                 onSignUpClick = viewmodel::onRegisterClick,
-                onGoogleClick = viewmodel::onGoogleClick,
+                onGoogleClick = {viewmodel.onGoogleClick(context) },
                 onLoginClick = onNavigateToLogin,
                 modifier = Modifier.padding(paddingValues)
             )

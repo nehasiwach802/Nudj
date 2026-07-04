@@ -1,5 +1,6 @@
 package com.tpc.nudj.viewmodels.auth.register
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tpc.nudj.model.AuthResult
@@ -166,9 +167,9 @@ class RegisterViewModel @Inject constructor(
     }
 
 
-    fun onGoogleClick() {
+    fun onGoogleClick(context: Context) {
         viewModelScope.launch {
-            val idToken = googleSignInClient.signIn()
+            val idToken = googleSignInClient.signIn(context)
             if (idToken.isNullOrBlank()){
                 _events.emit(
                     RegisterEvent.ShowSnackBar("Google sign-in failed")
