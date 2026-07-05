@@ -34,7 +34,7 @@ interface AuthRepository {
      * @param idToken Google ID token
      * @return Flow of AuthResult representing the operation result
      */
-    suspend fun signInWithGoogle(idToken: String): Flow<AuthResult>
+    suspend fun signInWithGoogle(idToken: String, role: Role): Flow<AuthResult>
 
     /**
      * Creates a new user account with email and password.
