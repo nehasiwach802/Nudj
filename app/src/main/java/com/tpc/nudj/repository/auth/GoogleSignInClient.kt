@@ -11,7 +11,8 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.tpc.nudj.R
 import javax.inject.Inject
 
-class GoogleSignInClient @Inject constructor() {
+class GoogleSignInClient @Inject constructor(){
+
     suspend fun signIn(context: Context): String? {
         val credentialManager = CredentialManager.create(context)
         return try {
