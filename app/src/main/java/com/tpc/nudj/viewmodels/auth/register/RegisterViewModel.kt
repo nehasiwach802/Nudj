@@ -53,15 +53,15 @@ class RegisterViewModel @Inject constructor(
     fun onRegisterClick() {
 
         viewModelScope.launch {
-            var isEmailValid = false
-            var emailErrorMessage = ""
-            val emailResult = Validator.isValidEmail(registerUiState.value.email.trim())
-            emailResult.onSuccess {
-                isEmailValid = true
-            }.onFailure { exception ->
-                isEmailValid = false
-                emailErrorMessage = exception.message ?: "Invalid Email"
-            }
+            Validator.isValidEmail(registerUiState.value.email.trim())
+                .onFailure { exception ->
+                    _events.emit(
+                        RegisterEvent.ShowSnackBar(
+                            exception.message ?: "Invalid Email"
+                        )
+                    )
+                    return@launch
+                }
 
             if(registerUiState.value.email.isBlank()){
                 _events.emit(RegisterEvent.ShowSnackBar("Please Enter Email"))
@@ -85,10 +85,7 @@ class RegisterViewModel @Inject constructor(
                 _events.emit(RegisterEvent.ShowSnackBar("Passwords do not match"))
                 return@launch
             }
-            if (!isEmailValid) {
-                _events.emit(RegisterEvent.ShowSnackBar(emailErrorMessage))
-                return@launch
-            }
+
 
             try{
              authRepository.createUserWithEmailAndPassword(
@@ -205,9 +202,15 @@ class RegisterViewModel @Inject constructor(
                                 _events.emit(
                                     RegisterEvent.ShowSnackBar("Google registration successful")
                                 )
-                                _events.emit(
-                                    RegisterEvent.NavigateToEmailVerified
-                                )
+                                when (registerUiState.value.role) {
+                                    Role.USER -> {
+                                        _events.emit(RegisterEvent.NavigateToUserDetailsInput)
+                                    }
+
+                                    Role.CLUB -> {
+                                        _events.emit(RegisterEvent.NavigateToClubVerificationScreen)
+                                    }
+                                }
                             } else {
                                 _registerUiState.update {
                                     it.copy(isLoading = false)

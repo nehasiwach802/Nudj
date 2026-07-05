@@ -17,7 +17,6 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.tpc.nudj.ui.navigation.ScreenRoute
 import com.tpc.nudj.ui.screen.DemoScreen
-import com.tpc.nudj.ui.screen.auth.clubVerification.ClubVerificationScreen
 import com.tpc.nudj.ui.screen.auth.emailVerification.EmailVerificationScreen
 import com.tpc.nudj.ui.screen.auth.emailVerified.EmailVerifiedScreen
 import com.tpc.nudj.ui.screen.auth.forgotPassword.ForgetPasswordScreen
@@ -103,10 +102,15 @@ class MainActivity : ComponentActivity() {
                                     backStack.clear()
                                     backStack.add(ScreenRoute.Auth.EmailVerification)
                                 },
-                                onNavigateToEmailVerified = {
+                                onNavigateToUserDetailsInput = {
                                     backStack.clear()
-                                    backStack.add(ScreenRoute.Auth.EmailVerified)
+                                    backStack.add(ScreenRoute.App.UserDetailsInput)
+                                },
+                                onNavigateToClubVerificationScreen = {
+                                    backStack.clear()
+                                    backStack.add(ScreenRoute.App.ClubVerificationScreen)
                                 }
+
                             )
                         }
                         entry<ScreenRoute.Auth.EmailVerification> {

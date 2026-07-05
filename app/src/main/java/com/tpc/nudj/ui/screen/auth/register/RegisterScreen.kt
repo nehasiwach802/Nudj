@@ -47,7 +47,8 @@ fun RegisterScreen(
     viewmodel: RegisterViewModel = hiltViewModel(),
     onNavigateToLogin: () -> Unit,
     onNavigateToEmailVerification: () -> Unit,
-    onNavigateToEmailVerified:()-> Unit
+    onNavigateToUserDetailsInput :() -> Unit,
+    onNavigateToClubVerificationScreen: () -> Unit
 ) {
     val uiState by viewmodel.registerUiState.collectAsStateWithLifecycle()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -62,8 +63,11 @@ fun RegisterScreen(
                 RegisterEvent.NavigateToEmailVerification -> {
                     onNavigateToEmailVerification()
                 }
-                RegisterEvent.NavigateToEmailVerified -> {
-                    onNavigateToEmailVerified()
+                RegisterEvent.NavigateToUserDetailsInput -> {
+                    onNavigateToUserDetailsInput()
+                }
+                RegisterEvent.NavigateToClubVerificationScreen -> {
+                    onNavigateToClubVerificationScreen()
                 }
             }
 
