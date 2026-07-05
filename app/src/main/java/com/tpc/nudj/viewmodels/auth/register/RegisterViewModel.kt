@@ -54,10 +54,10 @@ class RegisterViewModel @Inject constructor(
 
         viewModelScope.launch {
             Validator.isValidEmail(registerUiState.value.email.trim())
-                .onFailure { exception ->
+                .onFailure {
                     _events.emit(
                         RegisterEvent.ShowSnackBar(
-                            exception.message ?: "Invalid Email"
+                            "Invalid Email"
                         )
                     )
                     return@launch
