@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tpc.nudj.model.AuthResult
 import com.tpc.nudj.repository.auth.AuthRepository
+import com.tpc.nudj.ui.navigation.VerificationPurpose
 import com.tpc.nudj.ui.screen.auth.emailVerification.EmailVerificationEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,12 +27,19 @@ class EmailVerificationViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(EmailVerificationUiState())
     val uiState: StateFlow<EmailVerificationUiState> = _uiState.asStateFlow()
-    fun onResendEmailClick() {
+    fun onResendEmailClick(email: String, purpose: VerificationPurpose) {
         viewModelScope.launch {
             if (!uiState.value.isResendEnabled) {
                 return@launch
             }
-            authRepository.sendEmailVerification().collect { result ->
+            val emailVerificationFlow = when (purpose) {
+                VerificationPurpose.REGISTRATION ->
+                    authRepository.sendEmailVerification()
+
+                VerificationPurpose.PASSWORD_RESET ->
+                    authRepository.sendPasswordResetEmail(email)
+            }
+            emailVerificationFlow.collect { result ->
                 when (result) {
                     is AuthResult.Loading -> {
                         _uiState.update {
@@ -43,7 +51,6 @@ class EmailVerificationViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(isLoading = false)
                         }
-
                         _events.emit(
                             EmailVerificationEvent.showSnackBar("Verification email sent again")
                         )
@@ -92,12 +99,14 @@ class EmailVerificationViewModel @Inject constructor(
 
     }
     private var hasStartedTimer = false
-    fun onScreenOpened() {
+    fun onScreenOpened(email: String, purpose: VerificationPurpose) {
         if (hasStartedTimer) return
 
         hasStartedTimer = true
         startTimer()
-        startCheckingEmailVerification()
+        if (purpose == VerificationPurpose.REGISTRATION) {
+            startCheckingEmailVerification()
+        }
     }
     private fun startCheckingEmailVerification() {
         viewModelScope.launch {

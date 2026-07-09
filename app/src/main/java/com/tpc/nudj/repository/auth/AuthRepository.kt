@@ -68,4 +68,6 @@ interface AuthRepository {
      */
     suspend fun signOut()
     suspend fun reloadAndCheckEmailVerified(): Boolean
+    suspend fun resetPassword(code: String , newPassword:String ): Flow<AuthResult>
+    suspend fun verifyPasswordResetCode(code: String): Result<String>
 }

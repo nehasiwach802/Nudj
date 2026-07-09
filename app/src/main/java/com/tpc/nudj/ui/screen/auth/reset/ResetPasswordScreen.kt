@@ -15,11 +15,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -37,13 +41,28 @@ import com.tpc.nudj.ui.theme.NudjTheme
 @Composable
 fun ResetPasswordScreen(
     viewModel: ResetPasswordViewModel = hiltViewModel(),
-    onLoginClick :() ->Unit
+    onLoginClick :() ->Unit,
+    oobCode : String
 ) {
-    Scaffold(
-        containerColor = LocalAppColors.current.background
-    ) { paddingValues ->
 
-        val uiState by viewModel.resetPasswordUiState.collectAsState()
+
+    val uiState by viewModel.resetPasswordUiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ResetPasswordEvent.ShowSnackBar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                ResetPasswordEvent.NavigateToLogin -> onLoginClick()
+            }
+        }
+    }
+    Scaffold(
+        containerColor = LocalAppColors.current.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
         LoadingIndicator(isLoading = uiState.isLoading) {
             ResetPasswordScreenLayout(
                 modifier = Modifier.padding(paddingValues),
@@ -52,7 +71,7 @@ fun ResetPasswordScreen(
                 onConfirmPasswordInput = viewModel::onConfirmPasswordChange,
                 onPasswordVisibilityToggle = viewModel::togglePasswordVisibility,
                 onConfirmPasswordVisibilityToggle = viewModel::toggleConfirmPasswordVisibility,
-                onSubmitClick = viewModel::onSubmitClick,
+                onSubmitClick = {viewModel.onSubmitClick(oobCode)},
                 onLoginClick = onLoginClick
             )
         }

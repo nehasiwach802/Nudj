@@ -67,7 +67,8 @@ import com.tpc.nudj.ui.theme.LocalAppColors
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
-    navigateToCreateAccount: () ->Unit
+    navigateToCreateAccount: () ->Unit,
+    navigateToForgotPassword: () -> Unit
 ) {
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -91,7 +92,7 @@ fun LoginScreen(
                 onPasswordInput = { pass ->
                     viewModel.onPasswordChange(pass)
                 },
-                onForgotPasswordClick = viewModel::onForgotPasswordClick,
+                onForgotPasswordClick = navigateToForgotPassword,
                 onLoginClick = viewModel::onLoginClick,
                 onGoogleClick = {viewModel.onGoogleClick(context)},
                 onPasswordVisibilityToggle = viewModel::togglePasswordVisibility,

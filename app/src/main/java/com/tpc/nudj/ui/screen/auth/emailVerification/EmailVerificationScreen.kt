@@ -29,6 +29,7 @@ import com.tpc.nudj.ui.components.LoadingIndicator
 import com.tpc.nudj.ui.components.NudjTopAppBar
 import com.tpc.nudj.ui.components.PrimaryButton
 import com.tpc.nudj.ui.components.TertiaryButton
+import com.tpc.nudj.ui.navigation.VerificationPurpose
 import com.tpc.nudj.ui.theme.LocalAppColors
 import com.tpc.nudj.ui.theme.NudjTheme
 import com.tpc.nudj.viewmodels.auth.emailVerification.EmailVerificationViewModel
@@ -37,13 +38,19 @@ import kotlinx.coroutines.launch
 @Composable
 fun EmailVerificationScreen(
     viewModel: EmailVerificationViewModel = hiltViewModel(),
+    email: String,
+    purpose: VerificationPurpose,
     onNavigateBack: () -> Unit,
     onNavigateToEmailVerified: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackBarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(Unit) {
-        viewModel.onScreenOpened()
+    LaunchedEffect(email, purpose) {
+        viewModel.onScreenOpened(
+            email = email,
+            purpose = purpose
+
+        )
     }
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -70,7 +77,11 @@ fun EmailVerificationScreen(
             EmailVerificationScreenLayout(
                 uiState = uiState,
                 onBackClick = onNavigateBack,
-                onResendEmailClick = { viewModel.onResendEmailClick() },
+                onResendEmailClick = { viewModel.onResendEmailClick(
+                    email = email,
+                    purpose = purpose
+
+                ) },
                 modifier = Modifier.padding(paddingValues),
                 onShowSnackBar = { message-> snackBarHostState.showSnackbar(message) }
             )
@@ -90,75 +101,75 @@ fun EmailVerificationScreenLayout(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-        Column(
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+
+        Image(
+            painter = painterResource(id = R.drawable.meditating_mascot),
+            contentDescription = "Email Sent Illustration",
+            modifier = Modifier.size(280.dp)
+        )
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Text(
+            text = uiState.formattedTime,
+            style = MaterialTheme.typography.displayMedium,
+            color = LocalAppColors.current.primaryButtonColor
+        )
+
+        Spacer(modifier = Modifier.height(56.dp))
+
+        PrimaryButton(
+            text = "Check Inbox",
+            onClick = {
+                val inboxIntent = Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_APP_EMAIL)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+
+                val chooser = Intent.createChooser(inboxIntent, "Open Inbox via Gmail")
+
+                try {
+                    context.startActivity(chooser)
+                } catch (e: Exception){
+                    scope.launch {
+                        onShowSnackBar("No email app found")
+                    }
+                }
+            },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+                .fillMaxWidth()
+        )
 
-            Image(
-                painter = painterResource(id = R.drawable.meditating_mascot),
-                contentDescription = "Email Sent Illustration",
-                modifier = Modifier.size(280.dp)
-            )
 
-            Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(24.dp) )
 
+        TertiaryButton(
+            text = "Resend Email",
+            onClick = onResendEmailClick,
+            enabled = uiState.isResendEnabled
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if(!uiState.isResendEnabled){
             Text(
-                text = uiState.formattedTime,
-                style = MaterialTheme.typography.displayMedium,
-                color = LocalAppColors.current.primaryButtonColor
+                text = "Resend in ${uiState.timerInSeconds}s",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.padding(vertical = 8.dp)
             )
-
-            Spacer(modifier = Modifier.height(56.dp))
-
-            PrimaryButton(
-                text = "Check Inbox",
-                onClick = {
-                    val inboxIntent = Intent(Intent.ACTION_MAIN).apply {
-                        addCategory(Intent.CATEGORY_APP_EMAIL)
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-
-                    val chooser = Intent.createChooser(inboxIntent, "Open Inbox via Gmail")
-
-                    try {
-                        context.startActivity(chooser)
-                    } catch (e: Exception){
-                        scope.launch {
-                            onShowSnackBar("No email app found")
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-
-
-            Spacer(modifier = Modifier.height(24.dp) )
-
-            TertiaryButton(
-                text = "Resend Email",
-                onClick = onResendEmailClick,
-                enabled = uiState.isResendEnabled
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if(!uiState.isResendEnabled){
-                Text(
-                    text = "Resend in ${uiState.timerInSeconds}s",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-
         }
 
     }
+
+}
 
 
 @Preview(showBackground = true)
@@ -174,4 +185,4 @@ fun PreviewEmailVerificationScreen() {
             onShowSnackBar = {}
         )
     }
-}
+ }

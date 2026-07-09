@@ -4,6 +4,12 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
+enum class VerificationPurpose {
+    REGISTRATION,
+    PASSWORD_RESET
+}
+
+@Serializable
 sealed interface ScreenRoute : NavKey {
 
     @Serializable
@@ -21,7 +27,10 @@ sealed interface ScreenRoute : NavKey {
         data object Register : Auth
 
         @Serializable
-        data object EmailVerification : Auth
+        data class EmailVerification(
+            val email: String = "",
+            val purpose: VerificationPurpose = VerificationPurpose.REGISTRATION
+        ) : Auth
 
         @Serializable
         data object EmailVerified : Auth
@@ -30,7 +39,9 @@ sealed interface ScreenRoute : NavKey {
         data object ForgotPassword : Auth
 
         @Serializable
-        data object ResetPassword : Auth
+        data class  ResetPassword(
+            val oobCode : String
+        ) : Auth
     }
 
     @Serializable

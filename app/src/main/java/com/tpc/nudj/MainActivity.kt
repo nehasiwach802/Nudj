@@ -1,5 +1,6 @@
 package com.tpc.nudj
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -16,6 +19,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.tpc.nudj.ui.navigation.ScreenRoute
+import com.tpc.nudj.ui.navigation.VerificationPurpose
 import com.tpc.nudj.ui.screen.DemoScreen
 import com.tpc.nudj.ui.screen.auth.clubVerification.ClubVerificationScreen
 import com.tpc.nudj.ui.screen.auth.emailVerification.EmailVerificationScreen
@@ -34,8 +38,13 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 
 class MainActivity : ComponentActivity() {
+    private var deepLinkuri by mutableStateOf<Uri?>(null)
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
+        deepLinkuri = intent?.data
         enableEdgeToEdge()
         setContent {
             NudjTheme {
@@ -45,6 +54,9 @@ class MainActivity : ComponentActivity() {
                 val backStack = rememberNavBackStack(ScreenRoute.Auth.SplashScreen)
 
                 LaunchedEffect(authState) {
+                    if (deepLinkuri?.getQueryParameter("mode") == "resetPassword") {
+                        return@LaunchedEffect
+                    }
                     when (val state = authState) {
                         is AppViewModel.AuthState.Initial -> {}
                         is AppViewModel.AuthState.Unauthenticated -> {
@@ -53,7 +65,7 @@ class MainActivity : ComponentActivity() {
                         }
                         is AppViewModel.AuthState.EmailNotVerified -> {
                             backStack.clear()
-                            backStack.add(ScreenRoute.Auth.EmailVerification)
+                            backStack.add(ScreenRoute.Auth.EmailVerification())
                         }
                         is AppViewModel.AuthState.Authenticated -> {
                             backStack.clear()
@@ -69,6 +81,16 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+                }
+                LaunchedEffect(deepLinkuri) {
+                    val uri = deepLinkuri ?: return@LaunchedEffect
+                    val mode = uri.getQueryParameter("mode")
+                    val oobCode = uri.getQueryParameter("oobCode")
+                    if (mode == "resetPassword" && !oobCode.isNullOrBlank()) {
+                        backStack.clear()
+                        backStack.add(ScreenRoute.Auth.ResetPassword(oobCode))
+                    }
+                    deepLinkuri = null
                 }
                 NavDisplay(
                     backStack = backStack,
@@ -92,6 +114,9 @@ class MainActivity : ComponentActivity() {
                             LoginScreen(
                                 navigateToCreateAccount ={
                                     backStack.add(ScreenRoute.Auth.Register)
+                                },
+                                navigateToForgotPassword = {
+                                    backStack.add(ScreenRoute.Auth.ForgotPassword)
                                 }
                             )
                         }
@@ -102,7 +127,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onNavigateToEmailVerification = {
                                     backStack.clear()
-                                    backStack.add(ScreenRoute.Auth.EmailVerification)
+                                    backStack.add(ScreenRoute.Auth.EmailVerification(purpose = VerificationPurpose.REGISTRATION))
                                 },
                                 onNavigateToUserDetailsInput = {
                                     backStack.clear()
@@ -115,8 +140,10 @@ class MainActivity : ComponentActivity() {
 
                             )
                         }
-                        entry<ScreenRoute.Auth.EmailVerification> {
+                        entry<ScreenRoute.Auth.EmailVerification> { route ->
                             EmailVerificationScreen(
+                                email = route.email,
+                                purpose = route.purpose,
                                 onNavigateBack = {},
                                 onNavigateToEmailVerified = {
                                     backStack.clear()
@@ -126,12 +153,21 @@ class MainActivity : ComponentActivity() {
                         }
 
                         entry<ScreenRoute.Auth.ForgotPassword> {
-                            ForgetPasswordScreen(
+                            ForgetPasswordScreen(onNavigateToEmailVerification = { email ->
+                                backStack.add(
+                                    ScreenRoute.Auth.EmailVerification(
+                                        email = email,
+                                        purpose = VerificationPurpose.PASSWORD_RESET
+                                    )
+                                )
+                            },
+
                                 onLoginClick = {}
                             )
                         }
-                        entry<ScreenRoute.Auth.ResetPassword> {
+                        entry<ScreenRoute.Auth.ResetPassword> {route ->
                             ResetPasswordScreen(
+                                oobCode = route.oobCode,
                                 onLoginClick = {
                                     backStack.add(ScreenRoute.Auth.Login)
                                 }
@@ -153,10 +189,10 @@ class MainActivity : ComponentActivity() {
                             DemoScreen(text = "Student Dashboard")
                         }
                         entry<ScreenRoute.App.ClubDashboard>{
-                            ClubLandingScreen()
+                            DemoScreen(text = "Club Dashboard")
                         }
                         entry<ScreenRoute.App.ClubVerificationScreen>{
-                            ClubVerificationScreen(onNavigationBack = {})
+                            DemoScreen(text = "Club Verification Dashboard")
                         }
                         entry<ScreenRoute.App.UserDetailsInput> {
                             DemoScreen(text = "User Details Input")

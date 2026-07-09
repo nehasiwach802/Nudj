@@ -15,10 +15,14 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,14 +40,32 @@ import com.tpc.nudj.viewmodels.auth.forgotPassword.ForgotPasswordViewModel
 @Composable
 fun ForgetPasswordScreen(
     viewModel: ForgotPasswordViewModel = hiltViewModel(),
+    onNavigateToEmailVerification: (String) -> Unit,
     onLoginClick: () -> Unit
 
 ) {
-    Scaffold(
-        containerColor = LocalAppColors.current.background
+    val uiState by viewModel.forgotPasswordUiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        viewModel.events.collect { it ->
+            when (it) {
+                is ForgotPasswordEvents.ShowSnackBar -> {
+                    snackbarHostState.showSnackbar(it.message)
+                }
 
+                is ForgotPasswordEvents.NavigateToEmailVerification -> {
+                    onNavigateToEmailVerification(it.email)
+                }
+            }
+        }
+    }
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        },
+        containerColor = LocalAppColors.current.background
     ) { paddingValues ->
-        val uiState by viewModel.forgotPasswordUiState.collectAsState()
+
         LoadingIndicator(isLoading = uiState.isLoading) {
 
             ForgetPasswordScreenLayout(
@@ -57,6 +79,7 @@ fun ForgetPasswordScreen(
         }
     }
 }
+
 
 @Composable
 fun ForgetPasswordScreenLayout(
