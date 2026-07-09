@@ -10,7 +10,6 @@ import com.tpc.nudj.repository.user.UserRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
@@ -26,22 +25,18 @@ class FirebaseAuthRepository(
         val authStateListener = FirebaseAuth.AuthStateListener { auth ->
             val firebaseUser = auth.currentUser
             if (firebaseUser != null) {
-                launch(Dispatchers.IO) {
-                    try {
-                        val role = userRepository.fetchUserRole(firebaseUser.uid)
-                        trySend(
-                            User(
-                                uid = firebaseUser.uid,
-                                email = firebaseUser.email ?: "",
-                                displayName = firebaseUser.displayName ?: "",
-                                isEmailVerified = firebaseUser.isEmailVerified,
-                                photoUrl = firebaseUser.photoUrl?.toString() ?: "",
-                                role = role
-                            )
+                CoroutineScope(Dispatchers.IO).launch {
+                    val role = userRepository.fetchUserRole(firebaseUser.uid)
+                    trySend(
+                        User(
+                            uid = firebaseUser.uid,
+                            email = firebaseUser.email ?: "",
+                            displayName = firebaseUser.displayName ?: "",
+                            isEmailVerified = firebaseUser.isEmailVerified,
+                            photoUrl = firebaseUser.photoUrl?.toString() ?: "",
+                            role = role
                         )
-                    } catch (e: Exception){
-                        trySendBlocking(null)
-                    }
+                    )
                 }
             } else {
                 trySend(null)
@@ -91,7 +86,7 @@ class FirebaseAuthRepository(
         }
     }
 
-    override suspend fun signInWithGoogle(idToken: String, role: Role): Flow<AuthResult> = flow {
+    override suspend fun signInWithGoogle(idToken: String): Flow<AuthResult> = flow {
         try {
             emit(AuthResult.Loading)
             val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -100,10 +95,12 @@ class FirebaseAuthRepository(
 
             if (firebaseUser != null) {
                 if(firebaseUser.email?.contains("iiitdmj.ac.in") == false) {
+                    firebaseAuth.currentUser?.delete()?.await()
                     firebaseAuth.signOut()
                     emit(AuthResult.Error("Use IIITDMJ email addresses only."))
                     return@flow
                 }
+                val role = userRepository.fetchUserRole(firebaseUser.uid)
                 emit(
                     AuthResult.Success(
                         User(
@@ -183,11 +180,5 @@ class FirebaseAuthRepository(
 
     override suspend fun signOut() {
         firebaseAuth.signOut()
-    }
-
-    override suspend fun reloadAndCheckEmailVerified(): Boolean {
-        val firebaseUser = firebaseAuth.currentUser?: throw Exception("No user is signed in")
-        firebaseUser.reload().await()
-        return firebaseAuth.currentUser?.isEmailVerified == true
     }
 }
