@@ -40,15 +40,17 @@ fun EmailVerificationScreen(
     viewModel: EmailVerificationViewModel = hiltViewModel(),
     email: String,
     purpose: VerificationPurpose,
+    oobCode: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToEmailVerified: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackBarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(email, purpose) {
+    LaunchedEffect(email, purpose, oobCode) {
         viewModel.onScreenOpened(
             email = email,
-            purpose = purpose
+            purpose = purpose,
+            oobCode = oobCode
 
         )
     }

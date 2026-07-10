@@ -96,6 +96,7 @@ class AppViewModel @Inject constructor(
         }
     }
 
+
     private fun observeAuthState() {
         viewModelScope.launch {
             authRepository.getCurrentUser().collect { user ->

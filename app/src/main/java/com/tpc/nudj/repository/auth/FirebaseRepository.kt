@@ -210,4 +210,10 @@ class FirebaseAuthRepository(
             )
         }
     }
+    override suspend fun applyEmailVerificationCode(
+        code: String
+    ): Result<Unit> = runCatching {
+        firebaseAuth.applyActionCode(code).await()
+        firebaseAuth.currentUser?.reload()?.await()
+    }
 }

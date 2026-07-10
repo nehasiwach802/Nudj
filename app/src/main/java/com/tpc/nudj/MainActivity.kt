@@ -1,5 +1,6 @@
 package com.tpc.nudj
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -40,6 +41,11 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private var deepLinkuri by mutableStateOf<Uri?>(null)
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        deepLinkuri = intent.data
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -52,9 +58,9 @@ class MainActivity : ComponentActivity() {
                 val authState by appViewModel.authState.collectAsState()
 
                 val backStack = rememberNavBackStack(ScreenRoute.Auth.SplashScreen)
-
                 LaunchedEffect(authState) {
-                    if (deepLinkuri?.getQueryParameter("mode") == "resetPassword") {
+                    val deepLinkMode = deepLinkuri?.getQueryParameter("mode")
+                    if (deepLinkMode == "resetPassword" || deepLinkMode == "verifyEmail") {
                         return@LaunchedEffect
                     }
                     when (val state = authState) {
@@ -86,13 +92,35 @@ class MainActivity : ComponentActivity() {
                     val uri = deepLinkuri ?: return@LaunchedEffect
                     val mode = uri.getQueryParameter("mode")
                     val oobCode = uri.getQueryParameter("oobCode")
-                    if (mode == "resetPassword" && !oobCode.isNullOrBlank()) {
-                        backStack.clear()
-                        backStack.add(ScreenRoute.Auth.ResetPassword(oobCode))
+                    when (mode) {
+                        "resetPassword" -> {
+                            if (!oobCode.isNullOrBlank()) {
+                                backStack.clear()
+                                backStack.add(ScreenRoute.Auth.ResetPassword(oobCode))
+                            }
+                        }
+
+                        "verifyEmail" -> {
+                            if (!oobCode.isNullOrBlank()) {
+                                backStack.clear()
+                                backStack.add(
+                                    ScreenRoute.Auth.EmailVerification(
+                                        purpose = VerificationPurpose.REGISTRATION,
+                                        oobCode = oobCode
+                                    )
+                                )
+                            } else {
+                                backStack.clear()
+                                backStack.add(ScreenRoute.Auth.Login)
+                            }
+                        }
                     }
                     deepLinkuri = null
                 }
-                NavDisplay(
+
+
+
+                    NavDisplay(
                     backStack = backStack,
                     modifier = Modifier.fillMaxSize(),
                     entryDecorators = listOf(
@@ -144,6 +172,7 @@ class MainActivity : ComponentActivity() {
                             EmailVerificationScreen(
                                 email = route.email,
                                 purpose = route.purpose,
+                                oobCode = route.oobCode,
                                 onNavigateBack = {},
                                 onNavigateToEmailVerified = {
                                     backStack.clear()

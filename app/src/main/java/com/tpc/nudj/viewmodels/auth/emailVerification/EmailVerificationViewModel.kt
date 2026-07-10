@@ -99,13 +99,35 @@ class EmailVerificationViewModel @Inject constructor(
 
     }
     private var hasStartedTimer = false
-    fun onScreenOpened(email: String, purpose: VerificationPurpose) {
+    fun onScreenOpened(email: String, purpose: VerificationPurpose, oobCode: String? = null) {
         if (hasStartedTimer) return
 
         hasStartedTimer = true
         startTimer()
+        if (!oobCode.isNullOrBlank()) {
+            applyEmailVerificationCode(oobCode)
+            return
+        }
         if (purpose == VerificationPurpose.REGISTRATION) {
             startCheckingEmailVerification()
+        }
+    }
+    private fun applyEmailVerificationCode(oobCode: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            authRepository.applyEmailVerificationCode(oobCode)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                    _events.emit(EmailVerificationEvent.NavigateToEmailVerified)
+                }
+                .onFailure {
+                    _uiState.update { it.copy(isLoading = false) }
+                    _events.emit(
+                        EmailVerificationEvent.showSnackBar(
+                            it.message ?: "Unable to verify email"
+                        )
+                    )
+                }
         }
     }
     private fun startCheckingEmailVerification() {
