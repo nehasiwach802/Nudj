@@ -42,20 +42,13 @@ fun EmailVerificationScreen(
     purpose: VerificationPurpose,
     oobCode: String? = null,
     onNavigateBack: () -> Unit,
-    onNavigateToEmailVerified: () -> Unit
+    onNavigateToEmailVerified: () -> Unit,
+    onNavigateToResetPassword: (String) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackBarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(email, purpose, oobCode) {
-        viewModel.onScreenOpened(
-            email = email,
-            purpose = purpose,
-            oobCode = oobCode
-
-        )
-    }
     LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+        viewModel.events.collect {event ->
             when (event) {
                 is EmailVerificationEvent.showSnackBar -> {
                     snackBarHostState.showSnackbar(event.message)
@@ -64,8 +57,19 @@ fun EmailVerificationScreen(
                 EmailVerificationEvent.NavigateToEmailVerified -> {
                     onNavigateToEmailVerified()
                 }
+                is EmailVerificationEvent.NavigateToResetPassword ->{
+                    onNavigateToResetPassword(event.oobCode)
+                }
             }
         }
+    }
+    LaunchedEffect(email, purpose, oobCode) {
+        viewModel.onScreenOpened(
+            email = email,
+            purpose = purpose,
+            oobCode = oobCode
+
+        )
     }
     Scaffold(
         snackbarHost = {

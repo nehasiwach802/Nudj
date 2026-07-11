@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -56,6 +57,9 @@ class MainActivity : ComponentActivity() {
             NudjTheme {
                 val appViewModel: AppViewModel = hiltViewModel()
                 val authState by appViewModel.authState.collectAsState()
+                var comingEmailVerificationCode by rememberSaveable {
+                    mutableStateOf<String?>(null)
+                }
 
                 val backStack = rememberNavBackStack(ScreenRoute.Auth.SplashScreen)
                 LaunchedEffect(authState) {
@@ -95,20 +99,39 @@ class MainActivity : ComponentActivity() {
                     when (mode) {
                         "resetPassword" -> {
                             if (!oobCode.isNullOrBlank()) {
-                                backStack.clear()
-                                backStack.add(ScreenRoute.Auth.ResetPassword(oobCode))
+                                val currentRoute = backStack.lastOrNull()
+                                if (
+                                    currentRoute is ScreenRoute.Auth.EmailVerification && currentRoute.purpose == VerificationPurpose.PASSWORD_RESET
+                                ) {
+                                    comingEmailVerificationCode = oobCode
+                                } else {
+                                    backStack.clear()
+                                    backStack.add(
+                                        ScreenRoute.Auth.EmailVerification(
+                                            purpose = VerificationPurpose.PASSWORD_RESET,
+                                            oobCode = oobCode
+                                        )
+                                    )
+                                }
                             }
                         }
 
                         "verifyEmail" -> {
                             if (!oobCode.isNullOrBlank()) {
-                                backStack.clear()
-                                backStack.add(
-                                    ScreenRoute.Auth.EmailVerification(
-                                        purpose = VerificationPurpose.REGISTRATION,
-                                        oobCode = oobCode
+                                val currentRoute = backStack.lastOrNull()
+                                if (
+                                    currentRoute is ScreenRoute.Auth.EmailVerification && currentRoute.purpose == VerificationPurpose.REGISTRATION
+                                ) {
+                                    comingEmailVerificationCode = oobCode
+                                } else {
+                                    backStack.clear()
+                                    backStack.add(
+                                        ScreenRoute.Auth.EmailVerification(
+                                            purpose = VerificationPurpose.REGISTRATION,
+                                            oobCode = oobCode
+                                        )
                                     )
-                                )
+                                }
                             } else {
                                 backStack.clear()
                                 backStack.add(ScreenRoute.Auth.Login)
@@ -169,14 +192,19 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         entry<ScreenRoute.Auth.EmailVerification> { route ->
+                            val oobCode = route.oobCode ?: comingEmailVerificationCode
                             EmailVerificationScreen(
                                 email = route.email,
                                 purpose = route.purpose,
-                                oobCode = route.oobCode,
+                                oobCode = oobCode,
                                 onNavigateBack = {},
                                 onNavigateToEmailVerified = {
                                     backStack.clear()
                                     backStack.add(ScreenRoute.Auth.EmailVerified)
+                                },
+                                onNavigateToResetPassword = { validOobCode ->
+                                    backStack.clear()
+                                    backStack.add(ScreenRoute.Auth.ResetPassword(validOobCode))
                                 }
                             )
                         }

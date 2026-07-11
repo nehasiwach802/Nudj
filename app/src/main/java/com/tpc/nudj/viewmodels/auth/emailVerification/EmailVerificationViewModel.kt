@@ -2,7 +2,6 @@ package com.tpc.nudj.viewmodels.auth.emailVerification
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tpc.nudj.model.AuthResult
 import com.tpc.nudj.repository.auth.AuthRepository
 import com.tpc.nudj.ui.navigation.VerificationPurpose
@@ -47,6 +46,7 @@ class EmailVerificationViewModel @Inject constructor(
                         }
                     }
 
+                    is AuthResult.Success,
                     is AuthResult.VerificationNeeded -> {
                         _uiState.update {
                             it.copy(isLoading = false)
@@ -99,20 +99,26 @@ class EmailVerificationViewModel @Inject constructor(
 
     }
     private var hasStartedTimer = false
+    private var lastHandledOobCode: String? = null
     fun onScreenOpened(email: String, purpose: VerificationPurpose, oobCode: String? = null) {
-        if (hasStartedTimer) return
-
-        hasStartedTimer = true
-        startTimer()
-        if (!oobCode.isNullOrBlank()) {
-            applyEmailVerificationCode(oobCode)
-            return
+        if (!hasStartedTimer) {
+            hasStartedTimer = true
+            startTimer()
+            if (purpose == VerificationPurpose.REGISTRATION) {
+                startCheckingEmailVerification()
+            }
         }
-        if (purpose == VerificationPurpose.REGISTRATION) {
-            startCheckingEmailVerification()
+
+        if (!oobCode.isNullOrBlank() && oobCode != lastHandledOobCode) {
+            lastHandledOobCode = oobCode
+            when (purpose) {
+                VerificationPurpose.REGISTRATION -> handleEmailVerificationLink(oobCode)
+                VerificationPurpose.PASSWORD_RESET -> handlePasswordResetLink(oobCode)
+            }
         }
     }
-    private fun applyEmailVerificationCode(oobCode: String) {
+
+    private fun handleEmailVerificationLink(oobCode: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             authRepository.applyEmailVerificationCode(oobCode)
@@ -124,12 +130,34 @@ class EmailVerificationViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = false) }
                     _events.emit(
                         EmailVerificationEvent.showSnackBar(
-                            it.message ?: "Unable to verify email"
+                            "Invalid link, try again later."
                         )
                     )
                 }
         }
     }
+
+    private fun handlePasswordResetLink(oobCode: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            authRepository.verifyPasswordResetCode(oobCode)
+                .onSuccess {
+                    _uiState.update {
+                        it.copy(isLoading = false)
+                    }
+                    _events.emit(EmailVerificationEvent.NavigateToResetPassword(oobCode))
+                }
+                .onFailure {
+                    _uiState.update {
+                        it.copy(isLoading = false)
+                    }
+                    _events.emit(
+                        EmailVerificationEvent.showSnackBar("Invalid link, try again later.")
+                    )
+                }
+        }
+    }
+
     private fun startCheckingEmailVerification() {
         viewModelScope.launch {
             while (true) {
