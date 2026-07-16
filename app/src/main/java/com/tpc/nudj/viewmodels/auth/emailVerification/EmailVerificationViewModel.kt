@@ -52,7 +52,7 @@ class EmailVerificationViewModel @Inject constructor(
                             it.copy(isLoading = false)
                         }
                         _events.emit(
-                            EmailVerificationEvent.showSnackBar("Verification email sent again")
+                            EmailVerificationEvent.ShowSnackBar("Verification email sent again")
                         )
 
                         startTimer()
@@ -64,7 +64,7 @@ class EmailVerificationViewModel @Inject constructor(
                         }
 
                         _events.emit(
-                            EmailVerificationEvent.showSnackBar("Some error occurred while verifying the email. Please try again later.")
+                            EmailVerificationEvent.ShowSnackBar("Some error occurred while verifying the email. Please try again later.")
                         )
                     }
 
@@ -100,7 +100,7 @@ class EmailVerificationViewModel @Inject constructor(
     }
     private var hasStartedTimer = false
     private var lastHandledOobCode: String? = null
-    fun onScreenOpened(email: String, purpose: VerificationPurpose, oobCode: String? = null) {
+    fun onScreenOpened(purpose: VerificationPurpose) {
         if (!hasStartedTimer) {
             hasStartedTimer = true
             startTimer()
@@ -108,12 +108,27 @@ class EmailVerificationViewModel @Inject constructor(
                 startCheckingEmailVerification()
             }
         }
+    }
 
-        if (!oobCode.isNullOrBlank() && oobCode != lastHandledOobCode) {
-            lastHandledOobCode = oobCode
-            when (purpose) {
-                VerificationPurpose.REGISTRATION -> handleEmailVerificationLink(oobCode)
-                VerificationPurpose.PASSWORD_RESET -> handlePasswordResetLink(oobCode)
+    fun onEmailActionReceived(mode: String?, oobCode: String?) {
+        if (mode.isNullOrBlank() || oobCode.isNullOrBlank()) {
+            return
+        }
+
+        if (oobCode == lastHandledOobCode) {
+            return
+        }
+        lastHandledOobCode = oobCode
+        when (mode) {
+            "verifyEmail" -> {handleEmailVerificationLink(oobCode) }
+            "resetPassword" -> {handlePasswordResetLink(oobCode)}
+
+            else -> {
+                viewModelScope.launch {
+                    _events.emit(
+                        EmailVerificationEvent.ShowSnackBar("Unsupported email link.")
+                    )
+                }
             }
         }
     }
@@ -124,12 +139,12 @@ class EmailVerificationViewModel @Inject constructor(
             authRepository.applyEmailVerificationCode(oobCode)
                 .onSuccess {
                     _uiState.update { it.copy(isLoading = false) }
-                    _events.emit(EmailVerificationEvent.NavigateToEmailVerified)
+                    _events.emit(EmailVerificationEvent.RegistrationVerificationCompleted)
                 }
                 .onFailure {
                     _uiState.update { it.copy(isLoading = false) }
                     _events.emit(
-                        EmailVerificationEvent.showSnackBar(
+                        EmailVerificationEvent.ShowSnackBar(
                             "Invalid link, try again later."
                         )
                     )
@@ -152,7 +167,7 @@ class EmailVerificationViewModel @Inject constructor(
                         it.copy(isLoading = false)
                     }
                     _events.emit(
-                        EmailVerificationEvent.showSnackBar("Invalid link, try again later.")
+                        EmailVerificationEvent.ShowSnackBar("Invalid link, try again later.")
                     )
                 }
         }
@@ -167,14 +182,14 @@ class EmailVerificationViewModel @Inject constructor(
 
                     if (isVerified) {
                         _events.emit(
-                            EmailVerificationEvent.NavigateToEmailVerified
+                            EmailVerificationEvent.RegistrationVerificationCompleted
                         )
                         break
                     }
 
                 } catch (e: Exception) {
                     _events.emit(
-                        EmailVerificationEvent.showSnackBar("Unable to check email verification")
+                        EmailVerificationEvent.ShowSnackBar("Unable to check email verification")
                     )
                 }
             }

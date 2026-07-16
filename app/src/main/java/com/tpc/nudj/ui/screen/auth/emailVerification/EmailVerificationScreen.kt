@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tpc.nudj.EmailActionData
 import com.tpc.nudj.R
 import com.tpc.nudj.ui.components.LoadingIndicator
 import com.tpc.nudj.ui.components.NudjTopAppBar
@@ -40,7 +41,7 @@ fun EmailVerificationScreen(
     viewModel: EmailVerificationViewModel = hiltViewModel(),
     email: String,
     purpose: VerificationPurpose,
-    oobCode: String? = null,
+    emailActionData: EmailActionData = EmailActionData(),
     onNavigateBack: () -> Unit,
     onNavigateToEmailVerified: () -> Unit,
     onNavigateToResetPassword: (String) -> Unit = {}
@@ -50,11 +51,11 @@ fun EmailVerificationScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect {event ->
             when (event) {
-                is EmailVerificationEvent.showSnackBar -> {
+                is EmailVerificationEvent.ShowSnackBar -> {
                     snackBarHostState.showSnackbar(event.message)
                 }
 
-                EmailVerificationEvent.NavigateToEmailVerified -> {
+                EmailVerificationEvent.RegistrationVerificationCompleted -> {
                     onNavigateToEmailVerified()
                 }
                 is EmailVerificationEvent.NavigateToResetPassword ->{
@@ -63,11 +64,16 @@ fun EmailVerificationScreen(
             }
         }
     }
-    LaunchedEffect(email, purpose, oobCode) {
+    LaunchedEffect(email, purpose) {
         viewModel.onScreenOpened(
-            email = email,
-            purpose = purpose,
-            oobCode = oobCode
+            purpose = purpose
+
+        )
+    }
+    LaunchedEffect(emailActionData.mode, emailActionData.oobCode) {
+        viewModel.onEmailActionReceived(
+            mode = emailActionData.mode,
+            oobCode = emailActionData.oobCode
 
         )
     }

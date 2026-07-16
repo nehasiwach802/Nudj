@@ -29,8 +29,7 @@ sealed interface ScreenRoute : NavKey {
         @Serializable
         data class EmailVerification(
             val email: String = "",
-            val purpose: VerificationPurpose = VerificationPurpose.REGISTRATION,
-            val oobCode: String? = null
+            val purpose: VerificationPurpose = VerificationPurpose.REGISTRATION
         ) : Auth
 
         @Serializable
