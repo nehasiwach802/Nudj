@@ -1,5 +1,6 @@
 package com.tpc.nudj.repository.user
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,14 +19,19 @@ class UserRepositoryImpl @Inject constructor() : UserRepository {
 
     override suspend fun createUserProfile(uid: String, email: String, role: Role): Boolean {
         return try {
+            val batch = firestore.batch()
+
+            val userRef = firestore.collection(FirestoreCollections.USERS.path).document(uid)
             val userMap = hashMapOf(
                 "uid" to uid,
                 "email" to email,
                 "role" to role.name.lowercase(),
                 "createdAt" to System.currentTimeMillis()
             )
-            firestore.collection(FirestoreCollections.USERS.path).document(uid).set(userMap).await()
+            batch.set(userRef, userMap)
+
             if (role == Role.CLUB) {
+                val clubRef = firestore.collection(FirestoreCollections.CLUBS.path).document(uid)
                 val club = ClubUser(
                     clubId = uid,
                     clubEmail = email,
@@ -33,11 +39,15 @@ class UserRepositoryImpl @Inject constructor() : UserRepository {
                     verificationStatus = "pending"
                 )
                 val clubMap = FirestoreUtils.toMap(club)
-                firestore.collection(FirestoreCollections.CLUBS.path).document(uid).set(clubMap)
-                    .await()
+                batch.set(clubRef, clubMap)
             }
+
+            Log.d("UserRepository", "Attempting to commit batch...")
+            batch.commit().await()
+            Log.d("UserRepository", "Batch committed successfully!")
             true
         } catch (e: Exception) {
+            Log.e("UserRepository", "Batch write failed: ${e.localizedMessage}", e)
             false
         }
     }

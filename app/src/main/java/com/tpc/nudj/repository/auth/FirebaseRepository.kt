@@ -1,5 +1,6 @@
 package com.tpc.nudj.repository.auth
 
+import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -133,22 +134,39 @@ class FirebaseAuthRepository(
             val firebaseUser = result.user
 
             if (firebaseUser != null) {
-                // Update display name
-                val profileUpdates = UserProfileChangeRequest.Builder()
-                    .setDisplayName(displayName)
-                    .build()
+                val profileCreated = userRepository.createUserProfile(
+                    uid = firebaseUser.uid,
+                    email = firebaseUser.email ?: email,
+                    role = role
+                )
 
-                firebaseUser.updateProfile(profileUpdates).await()
+                if (!profileCreated) {
+                    emit(AuthResult.Error("Failed to initialize database collections."))
+                    return@flow
+                }
 
-                // Send email verification
-                firebaseUser.sendEmailVerification().await()
+                try {
+                    val profileUpdates = UserProfileChangeRequest.Builder()
+                        .setDisplayName(displayName)
+                        .build()
+                    firebaseUser.updateProfile(profileUpdates).await()
+                } catch (profileException: Exception) {
+                    Log.w("AuthRepository", "Non-fatal: Display name update failed: ${profileException.localizedMessage}")
+                }
+
+                try {
+                    firebaseUser.sendEmailVerification().await()
+                } catch (emailException: Exception) {
+                  Log.w("AuthRepository", "Non-fatal: Initial verification email failed: ${emailException.localizedMessage}")
+                }
 
                 emit(AuthResult.VerificationNeeded(email))
             } else {
-                emit(AuthResult.Error("User creation failed"))
+                emit(AuthResult.Error("User creation failed: Firebase returned a null user."))
             }
         } catch (e: Exception) {
-            emit(AuthResult.Error(e.message ?: "User creation failed"))
+            Log.e("AuthRepository", "CRITICAL: Registration flow aborted entirely", e)
+            emit(AuthResult.Error(e.localizedMessage ?: "User creation failed"))
         }
     }
 

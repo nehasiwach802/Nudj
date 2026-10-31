@@ -101,34 +101,12 @@ class RegisterViewModel @Inject constructor(
                              }
                         }
                         is AuthResult.VerificationNeeded ->{
-                            val currentUser = authRepository.getCurrentUser().firstOrNull()
-                            if (currentUser == null) {
-                                _registerUiState.update {
-                                    it.copy(isLoading = false)
-                                }
-                                _events.emit(
-                                    RegisterEvent.ShowSnackBar("User not found after signup")
-                                )
-                                return@collect
-                            }
-                            val isProfileCreated = userRepository.createUserProfile(
-                                uid = currentUser.uid,
-                                email = currentUser.email,
-                                role = registerUiState.value.role
+                            _events.emit(
+                                RegisterEvent.ShowSnackBar("Verification email sent")
                             )
-
-                            if (isProfileCreated) {
-                                _events.emit(
-                                    RegisterEvent.ShowSnackBar("Verification email sent")
-                                )
-                                _events.emit(
-                                    RegisterEvent.NavigateToEmailVerification
-                                )
-                            } else {
-                                _events.emit(
-                                    RegisterEvent.ShowSnackBar("Failed to create user profile")
-                                )
-                            }
+                            _events.emit(
+                                RegisterEvent.NavigateToEmailVerification
+                            )
                         }
                         is AuthResult.Success ->{
                             _registerUiState.update {
